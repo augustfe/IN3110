@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Strømpris</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Helvetica, Arial, sans-serif;
+      }
+
+      .error {
+        color: red;
+      }
+      .topnav {
+        overflow: hidden;
+        background-color: #333;
+      }
+
+      .topnav a {
+        float: left;
+        color: #f2f2f2;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+      }
+
+      .topnav a:hover {
+        background-color: #69dadb;
+        color: black;
+      }
+
+      .topnav a.active {
+        background-color: #193498;
+        color: white;
+      }
+    </style>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm//vega@5"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm//vega-lite@5.6.0"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm//vega-embed@6"
+    ></script>
+  </head>
+  <body>
+    <div class="topnav">
+      <a href="/">Home</a>
+      <a href="/docs">FastAPI Docs</a>
+      <a href="/help/index.html">Help</a>
+      <a class="active" href="/activity">Price per activity</a>
+    </div>
+    <header>
+      <h1>Prices per activity</h1>
+    </header>
+    <div id="vis"></div>
+    <!-- Create Form -->
+    <form action="javascript:refreshPlot()" id="price-form">
+      <label for="activities">Choose an activity:</label><br>
+
+      <select name="activities" id="activity">
+        <option value="shower">Take a shower</option>
+        <option value="heat">Heat the apartment</option>
+        <option value="baking">Cook a meal</option>
+      </select><br>
+
+      <label for="locations">Choose a region:</label><br>
+
+      <select name="locations" id="location">
+        <option value="NO1">Oslo</option>
+        <option value="NO2">Kristiansand</option>
+        <option value="NO3">Trondheim</option>
+        <option value="NO4">Tromsø</option>
+        <option value="NO5">Bergen</option>
+      </select><br>
+
+      <label for="minutes">Minutes</label>
+      <input type="text" id="minutes" value="10" min="1" max="60">
+      <button type="submit">Refresh</button>
+    </form>
+
+    <script type="text/javascript">
+      async function refreshPlot() {
+        // begin constructing URL to request the plot JSON
+        const plotUrl = new URL(
+          `${document.location.protocol}//${document.location.host}/plot_activity.json`
+        );
+
+        // get inputs from the form
+
+        var actInput = document.getElementById("activity");
+        if (actInput) {
+          plotUrl.searchParams.append("activity", actInput.value);
+        } else {
+          console.warn('No input with id="activity"')
+        }
+        var locInput = document.getElementById("location");
+        if (locInput) {
+          plotUrl.searchParams.append("location", locInput.value);
+        } else {
+          console.warn('No input with id="location"')
+        }
+        var minInput = document.getElementById("minutes");
+        if (minInput) {
+          plotUrl.searchParams.append("minutes", minInput.value);
+        } else {
+          console.warn('No input with id="minutes"');
+        }
+
+        console.log(`requesting new chart from ${plotUrl.href}`);
+        var response = await fetch(plotUrl.href);
+        var spec = await response.json();
+
+        var embedOpt = { mode: "vega-lite" };
+
+        function showError(el, error) {
+          el.innerHTML =
+            '<div class="error" style="color:red;">' +
+            "<p>JavaScript Error: " +
+            error.message +
+            "</p>" +
+            "<p>This usually means there's a typo in your chart specification. " +
+            "See the javascript console for the full traceback.</p>" +
+            "</div>";
+          throw error;
+        }
+        const el = document.getElementById("vis");
+        vegaEmbed("#vis", spec, embedOpt).catch((error) =>
+          showError(el, error)
+        );
+      }
+      refreshPlot();
+    </script>
+    <p>
+      <a href="https://www.hvakosterstrommen.no">
+        <img src="https://ik.imagekit.io/ajdfkwyt/hva-koster-strommen/strompriser-levert-av-hvakosterstrommen_oTtWvqeiB.png" alt="Strømpriser levert av Hva koster strømmen.no" width="200" height="45">
+      </a>
+    </p>
+  </body>
+</html>
